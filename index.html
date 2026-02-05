@@ -1,0 +1,64 @@
+
+<!DOCTYPE html>
+<html lang="pt">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Faturfeca - Faturação Eletrónica</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            colors: {
+              primary: {
+                DEFAULT: '#0052cc',
+                '50': '#e6f0ff',
+                '100': '#ccdfff',
+                '200': '#99c0ff',
+                '300': '#66a0ff',
+                '400': '#3380ff',
+                '500': '#0052cc',
+                '600': '#0042a3',
+                '700': '#00317a',
+                '800': '#002152',
+                '900': '#001029'
+              },
+              secondary: '#172B4D',
+              accent: '#00B8D9',
+              neutral: {
+                'light': '#F4F5F7',
+                'medium': '#DFE1E6',
+                'dark': '#6B778C',
+              }
+            }
+          }
+        }
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
+    "recharts": "https://esm.sh/recharts@^3.7.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.13.0",
+    "jspdf": "https://esm.sh/jspdf@^4.1.0",
+    "react-qr-code": "https://esm.sh/react-qr-code@^2.0.18",
+    "html2canvas": "https://esm.sh/html2canvas@^1.4.1"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
