@@ -8,19 +8,19 @@ const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-AO', { styl
 const Products: React.FC = () => {
     const { products, addProduct } = useAppContext();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [newProduct, setNewProduct] = useState<Omit<Product, 'id'>>({ name: '', description: '', price: 0 });
+    const [newProduct, setNewProduct] = useState<Omit<Product, 'id'>>({ name: '', description: '', sellingPrice: 0, purchasePrice: 0 });
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setNewProduct(prev => ({ ...prev, [name]: name === 'price' ? parseFloat(value) || 0 : value }));
+        setNewProduct(prev => ({ ...prev, [name]: name === 'sellingPrice' || name === 'purchasePrice' ? parseFloat(value) || 0 : value }));
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (newProduct.name && newProduct.price >= 0) {
+        if (newProduct.name && newProduct.sellingPrice >= 0) {
             addProduct(newProduct);
             setIsModalOpen(false);
-            setNewProduct({ name: '', description: '', price: 0 });
+            setNewProduct({ name: '', description: '', sellingPrice: 0, purchasePrice: 0 });
         }
     };
 
@@ -43,21 +43,29 @@ const Products: React.FC = () => {
                             <tr>
                                 <th scope="col" className="px-6 py-3">Nome</th>
                                 <th scope="col" className="px-6 py-3">Descrição</th>
-                                <th scope="col" className="px-6 py-3">Preço</th>
+                                <th scope="col" className="px-6 py-3">Preço de Aquisição</th>
+                                <th scope="col" className="px-6 py-3">Preço de Venda</th>
+                                <th scope="col" className="px-6 py-3">Lucro</th>
                                 <th scope="col" className="px-6 py-3 text-right">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {products.map(product => (
+                            {products.map(product => {
+                                const profit = product.purchasePrice !== undefined ? product.sellingPrice - product.purchasePrice : null;
+                                return (
                                 <tr key={product.id} className="bg-white border-b hover:bg-gray-50">
                                     <td className="px-6 py-4 font-medium text-secondary">{product.name}</td>
                                     <td className="px-6 py-4">{product.description}</td>
-                                    <td className="px-6 py-4 font-medium">{formatCurrency(product.price)}</td>
+                                    <td className="px-6 py-4">{product.purchasePrice !== undefined ? formatCurrency(product.purchasePrice) : 'N/D'}</td>
+                                    <td className="px-6 py-4 font-medium">{formatCurrency(product.sellingPrice)}</td>
+                                    <td className={`px-6 py-4 font-medium ${profit === null || profit < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                        {profit !== null ? formatCurrency(profit) : 'N/D'}
+                                    </td>
                                     <td className="px-6 py-4 text-right">
                                         <button className="font-medium text-primary hover:underline">Editar</button>
                                     </td>
                                 </tr>
-                            ))}
+                            )})}
                         </tbody>
                     </table>
                 </div>
@@ -76,9 +84,15 @@ const Products: React.FC = () => {
                                 <label className="block text-sm font-medium text-gray-700">Descrição</label>
                                 <textarea name="description" value={newProduct.description} onChange={handleInputChange} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm" />
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Preço (AOA)</label>
-                                <input type="number" name="price" value={newProduct.price} onChange={handleInputChange} required min="0" step="0.01" className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm" />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Preço de Aquisição (AOA)</label>
+                                    <input type="number" name="purchasePrice" value={newProduct.purchasePrice || ''} onChange={handleInputChange} min="0" step="0.01" className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Preço de Venda (AOA)</label>
+                                    <input type="number" name="sellingPrice" value={newProduct.sellingPrice} onChange={handleInputChange} required min="0" step="0.01" className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm" />
+                                </div>
                             </div>
                             <div className="flex justify-end gap-4 mt-6">
                                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">Cancelar</button>

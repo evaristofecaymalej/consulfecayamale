@@ -34,11 +34,17 @@ const CreateInvoice: React.FC = () => {
             newItems[index] = {
                 ...newItems[index],
                 description: product.description,
-                price: product.price,
+                price: product.sellingPrice,
                 quantity: newItems[index].quantity || 1,
             };
-            setItems(newItems);
+        } else {
+             newItems[index] = {
+                ...newItems[index],
+                description: '',
+                price: 0,
+            };
         }
+        setItems(newItems);
     }
 
     const addItem = () => {
@@ -73,7 +79,7 @@ const CreateInvoice: React.FC = () => {
             quantity: Number(item.quantity) || 0,
             price: Number(item.price) || 0,
             total: (Number(item.quantity) || 0) * (Number(item.price) || 0),
-        })).filter(item => item.description && item.quantity > 0 && item.price > 0);
+        })).filter(item => item.description && item.quantity > 0 && item.price >= 0);
         
         if (finalItems.length === 0) {
             alert("Adicione pelo menos um item válido à fatura.");
@@ -120,38 +126,48 @@ const CreateInvoice: React.FC = () => {
             <div>
                 <h3 className="text-lg font-medium text-secondary">Itens da Fatura</h3>
                 <div className="mt-4 space-y-4">
-                    {items.map((item, index) => (
-                        <div key={index} className="bg-neutral-light p-4 rounded-lg space-y-3">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="text-xs font-medium text-gray-600">Produto (Opcional)</label>
-                                    <select onChange={(e) => handleProductSelect(index, e.target.value)} className="mt-1 w-full border-gray-300 rounded-md shadow-sm sm:text-sm">
-                                        <option value="">Selecione para preencher</option>
-                                        {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                                    </select>
+                    {items.map((item, index) => {
+                        const lineTotal = (item.quantity || 0) * (item.price || 0);
+                        return (
+                            <div key={index} className="bg-neutral-light p-4 rounded-lg">
+                                <div className="grid grid-cols-12 gap-x-4 gap-y-2 items-start">
+                                    <div className="col-span-12 md:col-span-11">
+                                         <label className="block text-xs font-medium text-gray-600 mb-1">Produto / Serviço (Opcional)</label>
+                                         <select 
+                                             onChange={(e) => handleProductSelect(index, e.target.value)} 
+                                             className="w-full border-gray-300 rounded-md shadow-sm sm:text-sm"
+                                         >
+                                            <option value="">-- Item Personalizado --</option>
+                                            {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="col-span-12 md:col-span-1 flex items-end justify-end h-full">
+                                         <button type="button" onClick={() => removeItem(index)} className="text-red-500 hover:text-red-700 p-2 mt-5">
+                                            <TrashIcon className="w-5 h-5"/>
+                                        </button>
+                                    </div>
+                                    <div className="col-span-12">
+                                        <label className="block text-xs font-medium text-gray-600 mb-1">Descrição</label>
+                                        <textarea rows={2} placeholder="Descrição detalhada do produto ou serviço" value={item.description || ''} onChange={e => handleItemChange(index, 'description', e.target.value)} required className="w-full border-gray-300 rounded-md shadow-sm sm:text-sm" />
+                                    </div>
+                                    <div className="col-span-4 md:col-span-3">
+                                        <label className="block text-xs font-medium text-gray-600 mb-1">Quantidade</label>
+                                        <input type="number" placeholder="Qtd." value={item.quantity || ''} min="1" onChange={e => handleItemChange(index, 'quantity', parseFloat(e.target.value))} required className="w-full border-gray-300 rounded-md shadow-sm sm:text-sm" />
+                                    </div>
+                                    <div className="col-span-8 md:col-span-4">
+                                        <label className="block text-xs font-medium text-gray-600 mb-1">Preço Unitário (AOA)</label>
+                                        <input type="number" placeholder="Preço" value={item.price || ''} min="0" step="0.01" onChange={e => handleItemChange(index, 'price', parseFloat(e.target.value))} required className="w-full border-gray-300 rounded-md shadow-sm sm:text-sm" />
+                                    </div>
+                                    <div className="col-span-12 md:col-span-5">
+                                        <label className="block text-xs font-medium text-gray-600 mb-1">Total do Item</label>
+                                        <div className="mt-1 p-2 bg-gray-200 rounded-md text-sm text-right text-gray-800 font-medium">
+                                            {formatCurrency(lineTotal)}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-12 gap-4 items-center">
-                                <div className="col-span-12 md:col-span-6">
-                                    <label className="text-xs font-medium text-gray-600 sr-only">Descrição</label>
-                                    <input type="text" placeholder="Descrição do item" value={item.description || ''} onChange={e => handleItemChange(index, 'description', e.target.value)} required className="w-full border-gray-300 rounded-md shadow-sm sm:text-sm" />
-                                </div>
-                                <div className="col-span-4 md:col-span-2">
-                                    <label className="text-xs font-medium text-gray-600 sr-only">Quantidade</label>
-                                    <input type="number" placeholder="Qtd." value={item.quantity || ''} min="1" onChange={e => handleItemChange(index, 'quantity', parseFloat(e.target.value))} required className="w-full border-gray-300 rounded-md shadow-sm sm:text-sm" />
-                                </div>
-                                <div className="col-span-5 md:col-span-3">
-                                    <label className="text-xs font-medium text-gray-600 sr-only">Preço</label>
-                                    <input type="number" placeholder="Preço" value={item.price || ''} min="0" step="0.01" onChange={e => handleItemChange(index, 'price', parseFloat(e.target.value))} required className="w-full border-gray-300 rounded-md shadow-sm sm:text-sm" />
-                                </div>
-                                <div className="col-span-3 md:col-span-1 flex justify-end">
-                                    <button type="button" onClick={() => removeItem(index)} className="text-red-500 hover:text-red-700 h-9">
-                                        <TrashIcon className="w-5 h-5"/>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
+                        )
+                    })}
                 </div>
                 <button type="button" onClick={addItem} className="mt-4 text-sm font-medium text-primary hover:text-primary-700 flex items-center">
                     <PlusCircleIcon className="w-5 h-5 mr-1"/> Adicionar Item

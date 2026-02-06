@@ -22,10 +22,10 @@ export const MOCK_CLIENTS: Client[] = [
 ];
 
 export const MOCK_PRODUCTS: Product[] = [
-  { id: 'prod-1', name: 'Consultoria TI - Hora', description: 'Serviço de consultoria técnica em TI (1 hora)', price: 25000 },
-  { id: 'prod-2', name: 'Desenvolvimento Web - Pacote Básico', description: 'Criação de website institucional básico', price: 350000 },
-  { id: 'prod-3', name: 'Manutenção de Servidor - Mensal', description: 'Contrato de manutenção mensal de servidor', price: 80000 },
-  { id: 'prod-4', name: 'Licença de Software X - Anual', description: 'Licença de utilização anual do Software X', price: 150000 },
+  { id: 'prod-1', name: 'Consultoria TI - Hora', description: 'Serviço de consultoria técnica em TI (1 hora)', sellingPrice: 25000, purchasePrice: 15000 },
+  { id: 'prod-2', name: 'Desenvolvimento Web - Pacote Básico', description: 'Criação de website institucional básico', sellingPrice: 350000, purchasePrice: 200000 },
+  { id: 'prod-3', name: 'Manutenção de Servidor - Mensal', description: 'Contrato de manutenção mensal de servidor', sellingPrice: 80000, purchasePrice: 40000 },
+  { id: 'prod-4', name: 'Licença de Software X - Anual', description: 'Licença de utilização anual do Software X', sellingPrice: 150000, purchasePrice: 100000 },
 ];
 
 // Mock expenses for cash flow demonstration

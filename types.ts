@@ -58,7 +58,8 @@ export interface Product {
   id: string;
   name: string;
   description: string;
-  price: number;
+  sellingPrice: number;
+  purchasePrice?: number;
 }
 
 export enum CashFlowType {

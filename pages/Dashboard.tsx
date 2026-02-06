@@ -10,7 +10,7 @@ const formatCurrency = (amount: number) => {
 }
 
 const Dashboard: React.FC = () => {
-    const { invoices } = useAppContext();
+    const { invoices, products } = useAppContext();
 
     const totalFaturado = invoices
         .filter(inv => inv.status === InvoiceStatus.Paga)
@@ -21,12 +21,25 @@ const Dashboard: React.FC = () => {
         .reduce((sum, inv) => sum + inv.total, 0);
     
     const recentInvoices = invoices.slice(0, 5);
+    
+    const totalProfit = invoices
+        .filter(inv => inv.status === InvoiceStatus.Paga)
+        .flatMap(inv => inv.items)
+        .reduce((sum, item) => {
+            const product = products.find(p => p.description === item.description);
+            if (product && product.purchasePrice) {
+                const profitPerItem = item.price - product.purchasePrice;
+                return sum + (profitPerItem * item.quantity);
+            }
+            return sum;
+        }, 0);
 
     return (
         <div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 <DashboardCard title="Total Faturado" value={formatCurrency(totalFaturado)} icon={CashIcon} color="green" />
                 <DashboardCard title="Pendente de Recebimento" value={formatCurrency(pendente)} icon={ClockIcon} color="yellow" />
+                <DashboardCard title="Lucro Total Estimado" value={formatCurrency(totalProfit)} icon={TrendingUpIcon} color="purple" />
                 <DashboardCard title="Faturas Pagas" value={invoices.filter(i => i.status === InvoiceStatus.Paga).length.toString()} icon={CheckCircleIcon} color="blue" />
                 <DashboardCard title="Faturas Pendentes" value={invoices.filter(i => i.status === InvoiceStatus.Pendente).length.toString()} icon={ExclamationCircleIcon} color="red" />
             </div>
@@ -69,7 +82,7 @@ interface DashboardCardProps {
     title: string;
     value: string;
     icon: React.FC<React.SVGProps<SVGSVGElement>>;
-    color: 'green' | 'yellow' | 'blue' | 'red';
+    color: 'green' | 'yellow' | 'blue' | 'red' | 'purple';
 }
 
 const DashboardCard: React.FC<DashboardCardProps> = ({ title, value, icon: Icon, color }) => {
@@ -78,6 +91,7 @@ const DashboardCard: React.FC<DashboardCardProps> = ({ title, value, icon: Icon,
         yellow: 'bg-yellow-100 text-yellow-600',
         blue: 'bg-blue-100 text-blue-600',
         red: 'bg-red-100 text-red-600',
+        purple: 'bg-purple-100 text-purple-600',
     };
     return (
         <div className="bg-white rounded-xl shadow-lg p-6 flex items-center justify-between transition-transform transform hover:-translate-y-1">
@@ -105,5 +119,9 @@ const CheckCircleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 const ExclamationCircleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 );
+const TrendingUpIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+);
+
 
 export default Dashboard;
