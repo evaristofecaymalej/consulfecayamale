@@ -2,10 +2,10 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
-import { Client } from '../types';
+import { Client, UserRole } from '../types';
 
 const Clients: React.FC = () => {
-    const { clients, addClient } = useAppContext();
+    const { clients, addClient, currentUser } = useAppContext();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newClient, setNewClient] = useState<Omit<Client, 'id'>>({ name: '', email: '', nif: '', address: '' });
 
@@ -23,18 +23,22 @@ const Clients: React.FC = () => {
         }
     };
 
+    const canEdit = currentUser?.role === UserRole.Administrador || currentUser?.role === UserRole.Operador;
+
     return (
         <>
             <div className="bg-white rounded-xl shadow-lg p-6">
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-xl font-bold text-secondary">Clientes</h2>
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="flex items-center justify-center bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-600 transition-colors shadow-sm"
-                    >
-                        <PlusIcon className="w-5 h-5 mr-2" />
-                        Novo Cliente
-                    </button>
+                    {canEdit && (
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="flex items-center justify-center bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-600 transition-colors shadow-sm"
+                        >
+                            <PlusIcon className="w-5 h-5 mr-2" />
+                            Novo Cliente
+                        </button>
+                    )}
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left text-neutral-dark">
@@ -44,7 +48,7 @@ const Clients: React.FC = () => {
                                 <th scope="col" className="px-6 py-3">Email</th>
                                 <th scope="col" className="px-6 py-3">NIF</th>
                                 <th scope="col" className="px-6 py-3">Endereço</th>
-                                <th scope="col" className="px-6 py-3 text-right">Ações</th>
+                                {canEdit && <th scope="col" className="px-6 py-3 text-right">Ações</th>}
                             </tr>
                         </thead>
                         <tbody>
@@ -58,9 +62,11 @@ const Clients: React.FC = () => {
                                     <td className="px-6 py-4">{client.email}</td>
                                     <td className="px-6 py-4">{client.nif}</td>
                                     <td className="px-6 py-4">{client.address}</td>
-                                    <td className="px-6 py-4 text-right">
-                                        <button className="font-medium text-primary hover:underline">Editar</button>
-                                    </td>
+                                    {canEdit && (
+                                        <td className="px-6 py-4 text-right">
+                                            <button className="font-medium text-primary hover:underline">Editar</button>
+                                        </td>
+                                    )}
                                 </tr>
                             ))}
                         </tbody>

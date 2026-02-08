@@ -1,5 +1,5 @@
 
-import { Client, Invoice, InvoiceStatus, User, Company, InvoiceItem, Product, CashFlowEntry, CashFlowType } from '../types';
+import { Client, FinancialDocument, DocumentStatus, User, Company, DocumentItem, Product, CashFlowEntry, CashFlowType, DocumentType, UserRole } from '../types';
 
 export const MOCK_COMPANY: Company = {
   name: "Gonfeca serviços",
@@ -8,11 +8,14 @@ export const MOCK_COMPANY: Company = {
   logoUrl: "/faturfeca-logo.svg",
   email: "gonfecaserviços7@gmail.com",
   contact: "921179574",
+  iban: "0040 1373 0134 1016.7 BAI",
+  taxRegime: "Regime Simplificado de IVA",
 };
 
 export const MOCK_USERS: User[] = [
-  { id: 'user-1', name: 'Admin User', email: 'admin@faturfeca.com', role: 'Administrador' },
-  { id: 'user-2', name: 'Operator User', email: 'operator@faturfeca.com', role: 'Operador' },
+  { id: 'user-1', name: 'Admin User', email: 'admin@faturfeca.com', role: UserRole.Administrador },
+  { id: 'user-2', name: 'Contabilista User', email: 'contabilista@faturfeca.com', role: UserRole.Contabilista },
+  { id: 'user-3', name: 'Operador User', email: 'operador@faturfeca.com', role: UserRole.Operador },
 ];
 
 export const MOCK_CLIENTS: Client[] = [
@@ -38,8 +41,8 @@ export const MOCK_EXPENSES: Omit<CashFlowEntry, 'id' | 'type'>[] = [
 ];
 
 
-const generateItems = (count: number): {items: InvoiceItem[], subtotal: number} => {
-    const items: InvoiceItem[] = [];
+const generateItems = (count: number): {items: DocumentItem[], subtotal: number} => {
+    const items: DocumentItem[] = [];
     let subtotal = 0;
     for(let i=1; i<=count; i++) {
         const price = Math.floor(Math.random() * 20000) + 5000;
@@ -57,16 +60,21 @@ const generateItems = (count: number): {items: InvoiceItem[], subtotal: number} 
     return {items, subtotal};
 };
 
-const createInvoice = (id: number, client: Client, issueDate: Date, status: InvoiceStatus): Invoice => {
+const createDocument = (id: number, client: Client, issueDate: Date, status: DocumentStatus): FinancialDocument => {
     const { items, subtotal } = generateItems(Math.floor(Math.random() * 4) + 1);
     const vat = subtotal * 0.14;
     const total = subtotal + vat;
-    const invoiceId = `FT 2024/${id.toString().padStart(4, '0')}`;
+    const documentId = `FT 2024/${id.toString().padStart(4, '0')}`;
     const dueDate = new Date(issueDate);
     dueDate.setDate(dueDate.getDate() + 30);
 
+    const operatorUser = MOCK_USERS.find(u => u.role === UserRole.Operador)!;
+    const adminUser = MOCK_USERS.find(u => u.role === UserRole.Administrador)!;
+    const creator = id % 3 === 0 ? adminUser : operatorUser;
+
     return {
-        id: invoiceId,
+        id: documentId,
+        documentType: DocumentType.Fatura,
         client,
         issueDate: issueDate.toISOString().split('T')[0],
         dueDate: dueDate.toISOString().split('T')[0],
@@ -75,15 +83,17 @@ const createInvoice = (id: number, client: Client, issueDate: Date, status: Invo
         vat,
         total,
         status,
-        qrCodeValue: `${window.location.origin}${window.location.pathname}#/verify/${encodeURIComponent(invoiceId)}`
+        operatorId: creator.id,
+        operatorName: creator.name,
+        qrCodeValue: `${window.location.origin}${window.location.pathname}#/verify/${encodeURIComponent(documentId)}`
     };
 };
 
-export const MOCK_INVOICES: Invoice[] = [
-    createInvoice(1, MOCK_CLIENTS[0], new Date(2024, 6, 15), InvoiceStatus.Paga),
-    createInvoice(2, MOCK_CLIENTS[1], new Date(2024, 6, 20), InvoiceStatus.Pendente),
-    createInvoice(3, MOCK_CLIENTS[2], new Date(2024, 5, 28), InvoiceStatus.Paga),
-    createInvoice(4, MOCK_CLIENTS[0], new Date(2024, 5, 10), InvoiceStatus.Paga),
-    createInvoice(5, MOCK_CLIENTS[1], new Date(2024, 4, 30), InvoiceStatus.Paga),
-    createInvoice(6, MOCK_CLIENTS[2], new Date(2024, 6, 25), InvoiceStatus.Pendente),
+export const MOCK_DOCUMENTS: FinancialDocument[] = [
+    createDocument(1, MOCK_CLIENTS[0], new Date(2024, 6, 15), DocumentStatus.Paga),
+    createDocument(2, MOCK_CLIENTS[1], new Date(2024, 6, 20), DocumentStatus.Pendente),
+    createDocument(3, MOCK_CLIENTS[2], new Date(2024, 5, 28), DocumentStatus.Paga),
+    createDocument(4, MOCK_CLIENTS[0], new Date(2024, 5, 10), DocumentStatus.Paga),
+    createDocument(5, MOCK_CLIENTS[1], new Date(2024, 4, 30), DocumentStatus.Paga),
+    createDocument(6, MOCK_CLIENTS[2], new Date(2024, 6, 25), DocumentStatus.Pendente),
 ];

@@ -1,7 +1,7 @@
 
 import React from 'react';
 
-const FaturfecaLogo: React.FC<{ className?: string }> = ({ className }) => {
+const FaturfecaLogo: React.FC<{ className?: string, textColor?: string }> = ({ className, textColor = 'text-secondary' }) => {
   return (
     <div className={`flex items-center gap-2 ${className}`}>
         <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -15,7 +15,7 @@ const FaturfecaLogo: React.FC<{ className?: string }> = ({ className }) => {
                 </linearGradient>
             </defs>
         </svg>
-        <span className="text-2xl font-bold text-secondary">Faturfeca</span>
+        <span className={`text-2xl font-bold ${textColor}`}>Faturfeca</span>
     </div>
   );
 };

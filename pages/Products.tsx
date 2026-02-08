@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { Product } from '../types';
+import { Product, UserRole } from '../types';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-AO', { style: 'currency', currency: 'AOA' }).format(amount);
 
 const Products: React.FC = () => {
-    const { products, addProduct } = useAppContext();
+    const { products, addProduct, currentUser } = useAppContext();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newProduct, setNewProduct] = useState<Omit<Product, 'id'>>({ name: '', description: '', sellingPrice: 0, purchasePrice: 0 });
 
@@ -24,18 +24,22 @@ const Products: React.FC = () => {
         }
     };
 
+    const canEdit = currentUser?.role === UserRole.Administrador || currentUser?.role === UserRole.Operador;
+
     return (
         <>
             <div className="bg-white rounded-xl shadow-lg p-6">
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-xl font-bold text-secondary">Produtos e Serviços</h2>
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="flex items-center justify-center bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-600 transition-colors shadow-sm"
-                    >
-                        <PlusIcon className="w-5 h-5 mr-2" />
-                        Novo Produto/Serviço
-                    </button>
+                    {canEdit && (
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="flex items-center justify-center bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-600 transition-colors shadow-sm"
+                        >
+                            <PlusIcon className="w-5 h-5 mr-2" />
+                            Novo Produto/Serviço
+                        </button>
+                    )}
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left text-neutral-dark">
@@ -46,7 +50,7 @@ const Products: React.FC = () => {
                                 <th scope="col" className="px-6 py-3">Preço de Aquisição</th>
                                 <th scope="col" className="px-6 py-3">Preço de Venda</th>
                                 <th scope="col" className="px-6 py-3">Lucro</th>
-                                <th scope="col" className="px-6 py-3 text-right">Ações</th>
+                                {canEdit && <th scope="col" className="px-6 py-3 text-right">Ações</th>}
                             </tr>
                         </thead>
                         <tbody>
@@ -61,9 +65,11 @@ const Products: React.FC = () => {
                                     <td className={`px-6 py-4 font-medium ${profit === null || profit < 0 ? 'text-red-600' : 'text-green-600'}`}>
                                         {profit !== null ? formatCurrency(profit) : 'N/D'}
                                     </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <button className="font-medium text-primary hover:underline">Editar</button>
-                                    </td>
+                                    {canEdit && (
+                                        <td className="px-6 py-4 text-right">
+                                            <button className="font-medium text-primary hover:underline">Editar</button>
+                                        </td>
+                                    )}
                                 </tr>
                             )})}
                         </tbody>

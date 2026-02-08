@@ -2,13 +2,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
+import DocumentStatusBadge from '../components/DocumentStatusBadge';
 import { DocumentType } from '../types';
 
-const Header: React.FC = () => {
-  const { currentUser, openCalculator } = useAppContext();
+const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-AO', { style: 'currency', currency: 'AOA' }).format(amount);
+
+const Documents: React.FC = () => {
+  const { documents } = useAppContext();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  
+
   const documentTypes = [
     { type: DocumentType.Fatura, label: 'Fatura' },
     { type: DocumentType.FaturaRecibo, label: 'Fatura-Recibo' },
@@ -28,34 +31,10 @@ const Header: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  if (!currentUser) {
-    return null;
-  }
-
   return (
-    <header className="h-20 bg-white border-b border-neutral-medium flex items-center justify-between px-6">
-      <div>
-        <h1 className="text-xl font-bold text-secondary">Olá, {currentUser.name.split(' ')[0]}</h1>
-        <p className="text-sm text-neutral-dark">Bem-vindo(a) de volta!</p>
-      </div>
-      <div className="flex items-center gap-4">
-        <div className="relative">
-          <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-            <SearchIcon className="w-5 h-5 text-neutral-dark" />
-          </span>
-          <input
-            type="text"
-            placeholder="Procurar documento..."
-            className="w-full pl-10 pr-4 py-2 border border-neutral-medium rounded-lg bg-neutral-light focus:outline-none focus:ring-2 focus:ring-primary-300"
-          />
-        </div>
-        <button
-          onClick={openCalculator}
-          className="p-2 rounded-full hover:bg-neutral-light text-neutral-dark hover:text-secondary transition-colors"
-          aria-label="Abrir Calculadora"
-        >
-          <CalculatorIcon className="w-5 h-5" />
-        </button>
+    <div className="bg-white rounded-xl shadow-lg p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-bold text-secondary">Documentos</h2>
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -83,16 +62,41 @@ const Header: React.FC = () => {
           )}
         </div>
       </div>
-    </header>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm text-left text-neutral-dark">
+          <thead className="text-xs text-neutral-dark uppercase bg-neutral-light">
+            <tr>
+              <th scope="col" className="px-6 py-3">Status</th>
+              <th scope="col" className="px-6 py-3">Número</th>
+              <th scope="col" className="px-6 py-3">Tipo</th>
+              <th scope="col" className="px-6 py-3">Cliente</th>
+              <th scope="col" className="px-6 py-3">Data Emissão</th>
+              <th scope="col" className="px-6 py-3">Valor</th>
+              <th scope="col" className="px-6 py-3 text-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {documents.map(doc => (
+              <tr key={doc.id} className="bg-white border-b hover:bg-gray-50">
+                <td className="px-6 py-4"><DocumentStatusBadge status={doc.status} /></td>
+                <td className="px-6 py-4 font-medium text-secondary whitespace-nowrap">{doc.id}</td>
+                <td className="px-6 py-4 text-xs">{doc.documentType}</td>
+                <td className="px-6 py-4">{doc.client.name}</td>
+                <td className="px-6 py-4">{new Date(doc.issueDate).toLocaleDateString('pt-PT')}</td>
+                <td className="px-6 py-4 font-medium">{formatCurrency(doc.total)}</td>
+                <td className="px-6 py-4 text-right">
+                  <Link to={`/documents/${encodeURIComponent(doc.id)}`} className="font-medium text-primary hover:underline">
+                    Ver Detalhes
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 };
-
-// SVG Icon Components
-const SearchIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-  </svg>
-);
 
 const PlusIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -106,8 +110,4 @@ const ChevronDownIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-const CalculatorIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-);
-
-export default Header;
+export default Documents;

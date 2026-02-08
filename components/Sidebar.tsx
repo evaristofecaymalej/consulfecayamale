@@ -1,27 +1,38 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import FaturfecaLogo from './FaturfecaLogo';
 import { useAppContext } from '../context/AppContext';
+import { UserRole } from '../types';
 
 const Sidebar: React.FC = () => {
-    const { currentUser } = useAppContext();
+    const { currentUser, logout } = useAppContext();
     const navigate = useNavigate();
 
     const handleLogout = () => {
-        localStorage.removeItem('faturfeca_auth');
+        logout();
         navigate('/login');
     };
 
-    const navItems = [
-        { name: 'Dashboard', path: '/dashboard', icon: HomeIcon },
-        { name: 'Faturas', path: '/invoices', icon: DocumentTextIcon },
-        { name: 'Clientes', path: '/clients', icon: UsersIcon },
-        { name: 'Produtos', path: '/products', icon: CubeIcon },
-        { name: 'Fluxo de Caixa', path: '/cash-flow', icon: SwitchHorizontalIcon },
-        { name: 'Relatórios', path: '/reports', icon: ChartBarIcon },
-        { name: 'Configurações', path: '/settings', icon: CogIcon },
+    const allNavItems = [
+        { name: 'Dashboard', path: '/dashboard', icon: HomeIcon, roles: [UserRole.Administrador, UserRole.Contabilista, UserRole.Operador] },
+        { name: 'Documentos', path: '/documents', icon: DocumentTextIcon, roles: [UserRole.Administrador, UserRole.Contabilista, UserRole.Operador] },
+        { name: 'Clientes', path: '/clients', icon: UsersIcon, roles: [UserRole.Administrador, UserRole.Contabilista, UserRole.Operador] },
+        { name: 'Produtos', path: '/products', icon: CubeIcon, roles: [UserRole.Administrador, UserRole.Operador] },
+        { name: 'Fluxo de Caixa', path: '/cash-flow', icon: SwitchHorizontalIcon, roles: [UserRole.Administrador, UserRole.Contabilista] },
+        { name: 'Relatórios', path: '/reports', icon: ChartBarIcon, roles: [UserRole.Administrador, UserRole.Contabilista] },
+        { name: 'Configurações', path: '/settings', icon: CogIcon, roles: [UserRole.Administrador] },
     ];
+    
+    const navItems = useMemo(() => {
+        if (!currentUser) return [];
+        return allNavItems.filter(item => item.roles.includes(currentUser.role));
+    }, [currentUser]);
+
+
+    if (!currentUser) {
+        return null; // Don't render sidebar if no user is logged in (e.g., during redirection)
+    }
 
     const NavItem: React.FC<{ item: typeof navItems[0] }> = ({ item }) => (
         <NavLink

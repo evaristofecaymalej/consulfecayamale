@@ -1,10 +1,26 @@
 
-export enum InvoiceStatus {
-  Pendente = 'Pendente',
-  Paga = 'Paga',
+export enum DocumentType {
+  Fatura = 'Fatura',
+  FaturaRecibo = 'Fatura-Recibo',
+  Recibo = 'Recibo Simples',
+  Proforma = 'Proforma',
+  NotaCredito = 'Nota de Crédito',
+  NotaDebito = 'Nota de Débito',
 }
 
-export interface InvoiceItem {
+export enum DocumentStatus {
+  Pendente = 'Pendente',
+  Paga = 'Paga',
+  Anulada = 'Anulada',
+}
+
+export enum UserRole {
+  Administrador = 'Administrador',
+  Contabilista = 'Contabilista',
+  Operador = 'Operador',
+}
+
+export interface DocumentItem {
   id: string;
   description: string;
   quantity: number;
@@ -20,17 +36,20 @@ export interface Client {
   address: string;
 }
 
-export interface Invoice {
+export interface FinancialDocument {
   id: string; // Will be a unique, sequential number like "FT 2024/0001"
+  documentType: DocumentType;
   client: Client;
   issueDate: string;
   dueDate: string;
-  items: InvoiceItem[];
+  items: DocumentItem[];
   subtotal: number;
   vat: number; // IVA
   total: number;
-  status: InvoiceStatus;
+  status: DocumentStatus;
   qrCodeValue: string;
+  operatorId?: string;
+  operatorName?: string;
   paymentDetails?: {
     method: string;
     confirmationDate: string;
@@ -42,7 +61,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'Administrador' | 'Operador';
+  role: UserRole;
 }
 
 export interface Company {
@@ -52,6 +71,8 @@ export interface Company {
   logoUrl?: string;
   email?: string;
   contact?: string;
+  iban?: string;
+  taxRegime?: string;
 }
 
 export interface Product {

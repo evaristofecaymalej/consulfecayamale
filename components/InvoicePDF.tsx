@@ -1,12 +1,13 @@
 
 import React from 'react';
 import QRCode from 'react-qr-code';
-import { Invoice } from '../types';
+// Fix: Replaced deprecated Invoice type with FinancialDocument.
+import { FinancialDocument } from '../types';
 import { useAppContext } from '../context/AppContext';
 import FaturfecaLogo from './FaturfecaLogo';
 
 interface InvoicePDFProps {
-    invoice: Invoice;
+    invoice: FinancialDocument;
 }
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-AO', { style: 'currency', currency: 'AOA' }).format(amount);

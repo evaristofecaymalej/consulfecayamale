@@ -2,13 +2,13 @@
 import React from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
-import InvoiceStatusBadge from '../components/InvoiceStatusBadge';
+import DocumentStatusBadge from '../components/DocumentStatusBadge';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-AO', { style: 'currency', currency: 'AOA' }).format(amount);
 
 const ClientDetail: React.FC = () => {
     const { clientId } = useParams<{ clientId: string }>();
-    const { getClientById, invoices } = useAppContext();
+    const { getClientById, documents } = useAppContext();
     const navigate = useNavigate();
 
     if (!clientId) {
@@ -16,7 +16,7 @@ const ClientDetail: React.FC = () => {
     }
 
     const client = getClientById(clientId);
-    const clientInvoices = invoices.filter(inv => inv.client.id === clientId);
+    const clientDocuments = documents.filter(doc => doc.client.id === clientId);
 
     if (!client) {
         return <p>Cliente não encontrado.</p>;
@@ -53,30 +53,30 @@ const ClientDetail: React.FC = () => {
             </div>
 
             <div className="bg-white rounded-xl shadow-lg p-6">
-                <h3 className="text-lg font-semibold text-secondary mb-4">Histórico de Faturas</h3>
+                <h3 className="text-lg font-semibold text-secondary mb-4">Histórico de Documentos</h3>
                 <div className="overflow-x-auto">
-                    {clientInvoices.length > 0 ? (
+                    {clientDocuments.length > 0 ? (
                         <table className="w-full text-sm text-left text-neutral-dark">
                             <thead className="text-xs text-neutral-dark uppercase bg-neutral-light">
                                 <tr>
                                     <th scope="col" className="px-6 py-3">Status</th>
-                                    <th scope="col" className="px-6 py-3">Fatura #</th>
+                                    <th scope="col" className="px-6 py-3">Número</th>
+                                    <th scope="col" className="px-6 py-3">Tipo</th>
                                     <th scope="col" className="px-6 py-3">Data Emissão</th>
-                                    <th scope="col" className="px-6 py-3">Data Vencimento</th>
                                     <th scope="col" className="px-6 py-3">Valor</th>
                                     <th scope="col" className="px-6 py-3 text-right">Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {clientInvoices.map(invoice => (
-                                    <tr key={invoice.id} className="bg-white border-b hover:bg-gray-50">
-                                        <td className="px-6 py-4"><InvoiceStatusBadge status={invoice.status} /></td>
-                                        <td className="px-6 py-4 font-medium text-secondary whitespace-nowrap">{invoice.id}</td>
-                                        <td className="px-6 py-4">{new Date(invoice.issueDate).toLocaleDateString('pt-PT')}</td>
-                                        <td className="px-6 py-4">{new Date(invoice.dueDate).toLocaleDateString('pt-PT')}</td>
-                                        <td className="px-6 py-4 font-medium">{formatCurrency(invoice.total)}</td>
+                                {clientDocuments.map(doc => (
+                                    <tr key={doc.id} className="bg-white border-b hover:bg-gray-50">
+                                        <td className="px-6 py-4"><DocumentStatusBadge status={doc.status} /></td>
+                                        <td className="px-6 py-4 font-medium text-secondary whitespace-nowrap">{doc.id}</td>
+                                        <td className="px-6 py-4 text-xs">{doc.documentType}</td>
+                                        <td className="px-6 py-4">{new Date(doc.issueDate).toLocaleDateString('pt-PT')}</td>
+                                        <td className="px-6 py-4 font-medium">{formatCurrency(doc.total)}</td>
                                         <td className="px-6 py-4 text-right">
-                                            <Link to={`/invoices/${encodeURIComponent(invoice.id)}`} className="font-medium text-primary hover:underline">
+                                            <Link to={`/documents/${encodeURIComponent(doc.id)}`} className="font-medium text-primary hover:underline">
                                                 Ver Detalhes
                                             </Link>
                                         </td>
@@ -85,7 +85,7 @@ const ClientDetail: React.FC = () => {
                             </tbody>
                         </table>
                     ) : (
-                        <p className="text-neutral-dark text-center py-4">Nenhuma fatura encontrada para este cliente.</p>
+                        <p className="text-neutral-dark text-center py-4">Nenhum documento encontrado para este cliente.</p>
                     )}
                 </div>
             </div>

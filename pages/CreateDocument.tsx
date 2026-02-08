@@ -1,16 +1,22 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
-// Fix: Replaced deprecated types with DocumentItem, DocumentStatus, and added DocumentType.
 import { DocumentItem, DocumentStatus, DocumentType } from '../types';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-AO', { style: 'currency', currency: 'AOA' }).format(amount);
 
-const CreateInvoice: React.FC = () => {
-    // Fix: Replaced deprecated context functions with addDocument and getNextDocumentId.
-    const { clients, products, addDocument, getNextDocumentId } = useAppContext();
+const docTypeToLabel = (docType: string) => docType.replace(/([A-Z])/g, ' $1').trim();
+
+const CreateDocument: React.FC = () => {
+    const { docType } = useParams<{ docType: string }>();
     const navigate = useNavigate();
+
+    // Ensure docType is a valid DocumentType enum key
+    const currentDocType = Object.values(DocumentType).find(v => v === docType) || DocumentType.Fatura;
+
+    const { clients, products, addDocument, getNextDocumentId } = useAppContext();
+    
 
     const [clientId, setClientId] = useState<string>(clients[0]?.id || '');
     const [issueDate, setIssueDate] = useState(new Date().toISOString().split('T')[0]);
@@ -33,30 +39,15 @@ const CreateInvoice: React.FC = () => {
         const newItems = [...items];
         const product = products.find(p => p.id === productId);
         if(product) {
-            newItems[index] = {
-                ...newItems[index],
-                description: product.description,
-                price: product.sellingPrice,
-                quantity: newItems[index].quantity || 1,
-            };
+            newItems[index] = { ...newItems[index], description: product.description, price: product.sellingPrice, quantity: newItems[index].quantity || 1 };
         } else {
-             newItems[index] = {
-                ...newItems[index],
-                description: '',
-                price: 0,
-            };
+             newItems[index] = { ...newItems[index], description: '', price: 0, };
         }
         setItems(newItems);
     }
 
-    const addItem = () => {
-        setItems([...items, { description: '', quantity: 1, price: 0 }]);
-    };
-
-    const removeItem = (index: number) => {
-        const newItems = items.filter((_, i) => i !== index);
-        setItems(newItems);
-    };
+    const addItem = () => setItems([...items, { description: '', quantity: 1, price: 0 }]);
+    const removeItem = (index: number) => setItems(items.filter((_, i) => i !== index));
     
     const calculateTotals = () => {
         const subtotal = items.reduce((sum, item) => sum + (item.quantity || 0) * (item.price || 0), 0);
@@ -84,12 +75,14 @@ const CreateInvoice: React.FC = () => {
         })).filter(item => item.description && item.quantity > 0 && item.price >= 0);
         
         if (finalItems.length === 0) {
-            alert("Adicione pelo menos um item válido à fatura.");
+            alert("Adicione pelo menos um item válido.");
             return;
         }
+        
+        const isPaidOnCreation = [DocumentType.FaturaRecibo, DocumentType.Recibo].includes(currentDocType);
 
-        const newInvoiceData = {
-            documentType: DocumentType.Fatura,
+        const newDocumentData = {
+            documentType: currentDocType,
             client,
             issueDate,
             dueDate,
@@ -97,16 +90,17 @@ const CreateInvoice: React.FC = () => {
             subtotal,
             vat,
             total,
-            status: DocumentStatus.Pendente,
+            status: isPaidOnCreation ? DocumentStatus.Paga : DocumentStatus.Pendente,
+            paymentDetails: isPaidOnCreation ? { method: 'N/A', confirmationDate: issueDate } : undefined
         };
         
-        const newInvoice = addDocument(newInvoiceData);
-        navigate(`/invoices/${encodeURIComponent(newInvoice.id)}`);
+        const newDocument = addDocument(newDocumentData);
+        navigate(`/documents/${encodeURIComponent(newDocument.id)}`);
     };
 
     return (
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-6 md:p-8 space-y-8">
-            <h2 className="text-2xl font-bold text-secondary">Nova Fatura ({getNextDocumentId(DocumentType.Fatura)})</h2>
+            <h2 className="text-2xl font-bold text-secondary">Novo(a) {currentDocType} ({getNextDocumentId(currentDocType)})</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
@@ -127,7 +121,7 @@ const CreateInvoice: React.FC = () => {
             </div>
 
             <div>
-                <h3 className="text-lg font-medium text-secondary">Itens da Fatura</h3>
+                <h3 className="text-lg font-medium text-secondary">Itens do Documento</h3>
                 <div className="mt-4 space-y-4">
                     {items.map((item, index) => {
                         const lineTotal = (item.quantity || 0) * (item.price || 0);
@@ -136,10 +130,7 @@ const CreateInvoice: React.FC = () => {
                                 <div className="grid grid-cols-12 gap-x-4 gap-y-2 items-start">
                                     <div className="col-span-12 md:col-span-11">
                                          <label className="block text-xs font-medium text-gray-600 mb-1">Produto / Serviço (Opcional)</label>
-                                         <select 
-                                             onChange={(e) => handleProductSelect(index, e.target.value)} 
-                                             className="w-full border-gray-300 rounded-md shadow-sm sm:text-sm"
-                                         >
+                                         <select onChange={(e) => handleProductSelect(index, e.target.value)} className="w-full border-gray-300 rounded-md shadow-sm sm:text-sm">
                                             <option value="">-- Item Personalizado --</option>
                                             {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                         </select>
@@ -186,8 +177,8 @@ const CreateInvoice: React.FC = () => {
             </div>
 
             <div className="flex justify-end gap-4">
-                <button type="button" onClick={() => navigate('/invoices')} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">Cancelar</button>
-                <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-700">Emitir Fatura</button>
+                <button type="button" onClick={() => navigate('/documents')} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">Cancelar</button>
+                <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-700">Emitir Documento</button>
             </div>
         </form>
     );
@@ -200,4 +191,4 @@ const PlusCircleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 );
 
-export default CreateInvoice;
+export default CreateDocument;

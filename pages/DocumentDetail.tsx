@@ -2,14 +2,14 @@
 import React, { useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
-import { DocumentStatus, UserRole } from '../types';
-import InvoiceStatusBadge from '../components/InvoiceStatusBadge';
-import InvoicePDF from '../components/InvoicePDF';
+import { DocumentStatus, DocumentType, UserRole } from '../types';
+import DocumentStatusBadge from '../components/DocumentStatusBadge';
+import DocumentPDF from '../components/DocumentPDF';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-const InvoiceDetail: React.FC = () => {
-    const { invoiceId } = useParams<{ invoiceId: string }>();
+const DocumentDetail: React.FC = () => {
+    const { documentId } = useParams<{ documentId: string }>();
     const { getDocumentById, updateDocumentStatus, currentUser } = useAppContext();
     const navigate = useNavigate();
     const pdfRef = useRef<HTMLDivElement>(null);
@@ -20,14 +20,14 @@ const InvoiceDetail: React.FC = () => {
     const [confirmationDate, setConfirmationDate] = useState(new Date().toISOString().split('T')[0]);
     const [paymentNotes, setPaymentNotes] = useState('');
 
-    if (!invoiceId) {
-        return <p>ID da fatura não encontrado.</p>;
+    if (!documentId) {
+        return <p>ID do documento não encontrado.</p>;
     }
 
-    const invoice = getDocumentById(decodeURIComponent(invoiceId));
+    const doc = getDocumentById(decodeURIComponent(documentId));
     
-    if (!invoice) {
-        return <p>Fatura não encontrada.</p>;
+    if (!doc) {
+        return <p>Documento não encontrado.</p>;
     }
     
     const handleOpenPaymentModal = () => {
@@ -37,21 +37,21 @@ const InvoiceDetail: React.FC = () => {
         setPaymentNotes('');
         setIsModalOpen(true);
     };
-
+    
     const handleOpenEditPaymentModal = () => {
-        if (invoice?.paymentDetails) {
+        if (doc?.paymentDetails) {
             setIsEditingPayment(true);
-            setPaymentMethod(invoice.paymentDetails.method);
-            setConfirmationDate(invoice.paymentDetails.confirmationDate);
-            setPaymentNotes(invoice.paymentDetails.notes || '');
+            setPaymentMethod(doc.paymentDetails.method);
+            setConfirmationDate(doc.paymentDetails.confirmationDate);
+            setPaymentNotes(doc.paymentDetails.notes || '');
             setIsModalOpen(true);
         }
     };
     
     const handleSavePayment = (e: React.FormEvent) => {
         e.preventDefault();
-        if (currentUser?.role === UserRole.Administrador && invoice) {
-            updateDocumentStatus(invoice.id, DocumentStatus.Paga, {
+        if (currentUser?.role === UserRole.Administrador && doc) {
+            updateDocumentStatus(doc.id, DocumentStatus.Paga, {
                 method: paymentMethod,
                 confirmationDate: confirmationDate,
                 notes: paymentNotes,
@@ -70,65 +70,81 @@ const InvoiceDetail: React.FC = () => {
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
                 pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                pdf.save(`Fatura-${invoice.id.replace('/', '_')}.pdf`);
+                pdf.save(`${doc.documentType}-${doc.id.replace('/', '_')}.pdf`);
+            });
+        }
+    };
+
+    const handlePrint = () => {
+        const input = pdfRef.current;
+        if (input) {
+            html2canvas(input, { scale: 2 }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                pdf.output('dataurlnewwindow');
             });
         }
     };
     
+    const canBeMarkedAsPaid = doc.documentType === DocumentType.Fatura || doc.documentType === DocumentType.Proforma;
+
     return (
         <>
             <div className="bg-white rounded-xl shadow-lg p-6 md:p-8">
                 <div className="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
                     <div>
-                        <h2 className="text-2xl font-bold text-secondary">Fatura {invoice.id}</h2>
+                        <h2 className="text-2xl font-bold text-secondary">{doc.documentType} {doc.id}</h2>
                         <div className="mt-2">
-                            <InvoiceStatusBadge status={invoice.status} />
+                            <DocumentStatusBadge status={doc.status} />
                         </div>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
-                        {invoice.status === DocumentStatus.Pendente && currentUser?.role === UserRole.Administrador && (
+                        {doc.status === DocumentStatus.Pendente && currentUser?.role === UserRole.Administrador && canBeMarkedAsPaid && (
                             <button onClick={handleOpenPaymentModal} className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2">
                                 Marcar como Paga
                             </button>
                         )}
-                        <button onClick={handleDownloadPdf} className="bg-white text-primary border border-primary px-4 py-2 rounded-lg font-medium hover:bg-primary-50 transition-colors flex items-center gap-2">
-                            <RefreshIcon className="w-5 h-5"/>
-                            Reemitir PDF
+                        <button onClick={handlePrint} className="bg-white text-primary border border-primary px-4 py-2 rounded-lg font-medium hover:bg-primary-50 transition-colors flex items-center gap-2">
+                            <PrintIcon className="w-5 h-5"/>
+                            Imprimir
                         </button>
                         <button onClick={handleDownloadPdf} className="bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-600 transition-colors flex items-center gap-2">
                             <DownloadIcon className="w-5 h-5"/>
                             Download PDF
                         </button>
-                        <button onClick={() => navigate('/invoices')} className="bg-neutral-medium text-secondary px-4 py-2 rounded-lg font-medium hover:bg-neutral-dark hover:text-white transition-colors">
+                        <button onClick={() => navigate('/documents')} className="bg-neutral-medium text-secondary px-4 py-2 rounded-lg font-medium hover:bg-neutral-dark hover:text-white transition-colors">
                             Voltar
                         </button>
                     </div>
                 </div>
 
-                {invoice.status === DocumentStatus.Paga && invoice.paymentDetails && (
+                {doc.status === DocumentStatus.Paga && doc.paymentDetails && (
                     <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
                         <div className="flex justify-between items-center mb-2">
-                             <h3 className="text-lg font-semibold text-green-800 flex items-center gap-2">
+                            <h3 className="text-lg font-semibold text-green-800 flex items-center gap-2">
                                 <CheckCircleIcon className="w-6 h-6"/>
                                 Detalhes do Pagamento
                             </h3>
-                             {currentUser?.role === UserRole.Administrador && (
+                            {currentUser?.role === UserRole.Administrador && (
                                 <button onClick={handleOpenEditPaymentModal} className="text-xs font-medium text-primary hover:underline">Editar</button>
                             )}
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                             <div>
                                 <p className="font-medium text-gray-500">Método de Pagamento</p>
-                                <p className="text-gray-800 font-semibold">{invoice.paymentDetails.method}</p>
+                                <p className="text-gray-800 font-semibold">{doc.paymentDetails.method}</p>
                             </div>
                             <div>
                                 <p className="font-medium text-gray-500">Data de Confirmação</p>
-                                <p className="text-gray-800 font-semibold">{new Date(invoice.paymentDetails.confirmationDate + 'T00:00:00').toLocaleDateString('pt-PT')}</p>
+                                <p className="text-gray-800 font-semibold">{new Date(doc.paymentDetails.confirmationDate + 'T00:00:00').toLocaleDateString('pt-PT')}</p>
                             </div>
-                            {invoice.paymentDetails.notes && (
+                            {doc.paymentDetails.notes && (
                                 <div className="md:col-span-3">
                                     <p className="font-medium text-gray-500">Notas/Referência</p>
-                                    <p className="text-gray-800 font-semibold whitespace-pre-wrap">{invoice.paymentDetails.notes}</p>
+                                    <p className="text-gray-800 font-semibold whitespace-pre-wrap">{doc.paymentDetails.notes}</p>
                                 </div>
                             )}
                         </div>
@@ -136,7 +152,7 @@ const InvoiceDetail: React.FC = () => {
                 )}
 
                 <div ref={pdfRef}>
-                  <InvoicePDF invoice={invoice} />
+                  <DocumentPDF document={doc} />
                 </div>
             </div>
 
@@ -175,15 +191,15 @@ const InvoiceDetail: React.FC = () => {
     );
 };
 
-const RefreshIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h5M5.5 9.5A8.001 8.001 0 0119.34 14.5M20 20v-5h-5m-1-5.5A8.001 8.001 0 004.66 9.5" />
-    </svg>
-);
-
 const DownloadIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+    </svg>
+);
+
+const PrintIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm7-8V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
     </svg>
 );
 
@@ -192,4 +208,4 @@ const CheckCircleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 
-export default InvoiceDetail;
+export default DocumentDetail;

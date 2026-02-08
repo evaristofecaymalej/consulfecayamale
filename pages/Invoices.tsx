@@ -7,7 +7,8 @@ import InvoiceStatusBadge from '../components/InvoiceStatusBadge';
 const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-AO', { style: 'currency', currency: 'AOA' }).format(amount);
 
 const Invoices: React.FC = () => {
-  const { invoices } = useAppContext();
+  // Fix: `invoices` is not provided by the context, replaced with `documents`.
+  const { documents } = useAppContext();
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6">
@@ -35,7 +36,7 @@ const Invoices: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {invoices.map(invoice => (
+            {documents.map(invoice => (
               <tr key={invoice.id} className="bg-white border-b hover:bg-gray-50">
                 <td className="px-6 py-4"><InvoiceStatusBadge status={invoice.status} /></td>
                 <td className="px-6 py-4 font-medium text-secondary whitespace-nowrap">{invoice.id}</td>

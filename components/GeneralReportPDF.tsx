@@ -1,22 +1,28 @@
 
 import React from 'react';
-import { Company, Invoice, InvoiceStatus, Product, Client, CashFlowEntry, CashFlowType } from '../types';
+import { Company, FinancialDocument, DocumentStatus, Product, Client, CashFlowEntry, CashFlowType } from '../types';
 import FaturfecaLogo from './FaturfecaLogo';
 
+interface TopProduct {
+    description: string;
+    quantity: number;
+    total: number;
+}
 interface GeneralReportPDFProps {
     company: Company;
-    invoices: Invoice[];
+    documents: FinancialDocument[];
     clients: Client[];
     products: Product[];
     cashFlowEntries: CashFlowEntry[];
+    topProducts: TopProduct[];
 }
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('pt-AO', { style: 'currency', currency: 'AOA' }).format(amount);
 
-const GeneralReportPDF: React.FC<GeneralReportPDFProps> = ({ company, invoices, cashFlowEntries, products }) => {
+const GeneralReportPDF: React.FC<GeneralReportPDFProps> = ({ company, documents, cashFlowEntries, products, topProducts }) => {
     
-    const paidInvoices = invoices.filter(inv => inv.status === InvoiceStatus.Paga);
-    const pendingInvoices = invoices.filter(inv => inv.status === InvoiceStatus.Pendente);
+    const paidInvoices = documents.filter(inv => inv.status === DocumentStatus.Paga);
+    const pendingInvoices = documents.filter(inv => inv.status === DocumentStatus.Pendente);
 
     const totalFaturado = paidInvoices.reduce((sum, inv) => sum + inv.total, 0);
     const totalPendente = pendingInvoices.reduce((sum, inv) => sum + inv.total, 0);
@@ -33,21 +39,8 @@ const GeneralReportPDF: React.FC<GeneralReportPDFProps> = ({ company, invoices, 
         return acc;
     }, {} as { [key: string]: number });
 
-    const salesByProduct = paidInvoices.flatMap(inv => inv.items).reduce((acc, item) => {
-        if (!acc[item.description]) {
-            acc[item.description] = { quantity: 0, total: 0, totalProfit: 0 };
-        }
-        const product = products.find(p => p.description === item.description);
-        const purchasePrice = product?.purchasePrice;
-
-        acc[item.description].quantity += item.quantity;
-        acc[item.description].total += item.total;
-        if (purchasePrice !== undefined) {
-            const profitPerItem = item.price - purchasePrice;
-            acc[item.description].totalProfit += profitPerItem * item.quantity;
-        }
-        return acc;
-    }, {} as { [key: string]: { quantity: number; total: number; totalProfit: number } });
+    // The salesByProduct calculation has been moved to the Reports page to avoid duplication
+    // We now receive topProducts as a prop.
 
     return (
         <div className="p-8 bg-white text-gray-900 font-sans text-sm">
@@ -109,23 +102,21 @@ const GeneralReportPDF: React.FC<GeneralReportPDFProps> = ({ company, invoices, 
             </section>
 
             <section className="mt-10 break-inside-avoid">
-                <h2 className="text-lg font-bold text-secondary mb-4">Vendas por Produto/Serviço</h2>
+                <h2 className="text-lg font-bold text-secondary mb-4">Top 5 Produtos/Serviços Mais Vendidos</h2>
                 <table className="w-full text-left text-xs">
                     <thead>
                         <tr className="bg-gray-100 text-gray-600 uppercase">
                             <th className="p-2 font-semibold">Descrição</th>
                             <th className="p-2 font-semibold text-center">Qtd. Vendida</th>
                             <th className="p-2 font-semibold text-right">Valor Total</th>
-                            <th className="p-2 font-semibold text-right">Lucro Total</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {Object.entries(salesByProduct).sort(([, a], [, b]) => (b as { total: number }).total - (a as { total: number }).total).map(([desc, data]) => (
-                            <tr key={desc} className="border-b border-gray-100">
-                                <td className="p-2">{desc}</td>
-                                <td className="p-2 text-center">{(data as { quantity: number }).quantity}</td>
-                                <td className="p-2 text-right font-medium">{formatCurrency((data as { total: number }).total)}</td>
-                                <td className="p-2 text-right font-medium text-green-600">{formatCurrency((data as { totalProfit: number }).totalProfit)}</td>
+                         {topProducts.map(product => (
+                            <tr key={product.description} className="border-b border-gray-100">
+                                <td className="p-2">{product.description}</td>
+                                <td className="p-2 text-center">{product.quantity}</td>
+                                <td className="p-2 text-right font-medium">{formatCurrency(product.total)}</td>
                             </tr>
                         ))}
                     </tbody>

@@ -1,9 +1,8 @@
 
 import React from 'react';
-// Fix: Replaced deprecated InvoiceStatus with DocumentStatus.
 import { DocumentStatus } from '../types';
 
-const InvoiceStatusBadge: React.FC<{ status: DocumentStatus }> = ({ status }) => {
+const DocumentStatusBadge: React.FC<{ status: DocumentStatus }> = ({ status }) => {
   const baseClasses = 'px-2.5 py-0.5 text-xs font-medium rounded-full inline-flex items-center';
   const statusConfig = {
     [DocumentStatus.Paga]: {
@@ -16,7 +15,6 @@ const InvoiceStatusBadge: React.FC<{ status: DocumentStatus }> = ({ status }) =>
       classes: 'bg-yellow-100 text-yellow-800',
       dot: 'bg-yellow-500'
     },
-    // Fix: Added missing 'Anulada' status to match the DocumentStatus enum.
     [DocumentStatus.Anulada]: {
       text: 'Anulada',
       classes: 'bg-red-100 text-red-800',
@@ -34,4 +32,4 @@ const InvoiceStatusBadge: React.FC<{ status: DocumentStatus }> = ({ status }) =>
   );
 };
 
-export default InvoiceStatusBadge;
+export default DocumentStatusBadge;
